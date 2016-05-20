@@ -1,0 +1,16 @@
+[
+{
+  "modid": "computer",
+  "name": "Computer Mod",
+  "description": "A computer mod.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Cout970"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
