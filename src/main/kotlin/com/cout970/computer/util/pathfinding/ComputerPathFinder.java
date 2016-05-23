@@ -51,7 +51,8 @@ public class ComputerPathFinder extends PathFinding {
                         return true;
                     }
                 }
-            } else if (computer != null) {
+            }
+            if (computer != null) {
                 IModule[] modules = computer.getModules();
                 if (modules != null) {
                     for (IModule mod : modules) {

@@ -205,7 +205,7 @@ public class PeripheralMonitor implements IPeripheralMonitor, IMessageStorage {
     public void onCursorClick(int x, int y, int button) {
         regCursorPosX = x;
         regCursorPosY = y;
-        regCursorClick = button + 1;
+        regCursorClick = 1 << button;
     }
 
     @Override

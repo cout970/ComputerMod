@@ -4,7 +4,6 @@ import com.cout970.computer.api.IModuleCPU;
 import com.cout970.computer.api.IModuleMMU;
 import com.cout970.computer.api.IModuleRAM;
 import com.cout970.computer.util.ComputerUtilsKt;
-import jline.internal.Log;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class ModuleCPU_MIPS implements IModuleCPU {
@@ -21,6 +20,8 @@ public class ModuleCPU_MIPS implements IModuleCPU {
     protected int regStatus = 0;
     protected int regCause = 0;
     protected int regEPC = 0;
+    //
+    protected int jump = -1;
 
     protected int enableMMU = 0;
 
@@ -63,7 +64,7 @@ public class ModuleCPU_MIPS implements IModuleCPU {
     public void iterate() {
         if (cpuCycles >= 0) {
             if (debug) {
-                cpuCycles += 1;
+                cpuCycles += 100;
             } else {
                 cpuCycles += 2000;//CPU clock speed / 20 ticks
             }
@@ -79,7 +80,12 @@ public class ModuleCPU_MIPS implements IModuleCPU {
     }
 
     public void advancePC() {
-        regPC = (regPC + 4);
+        if(jump != -1){
+            regPC = jump;
+            jump = -1;
+        }else {
+            regPC = (regPC + 4);
+        }
     }
 
     public int getRegister(int t) {
@@ -116,6 +122,8 @@ public class ModuleCPU_MIPS implements IModuleCPU {
                 break;
             case Exception:
                 Exception(instruct);
+            case NOP:
+                break;
             default:
                 throwException(1);
         }
@@ -151,7 +159,7 @@ public class ModuleCPU_MIPS implements IModuleCPU {
                     "mfhi", "mthi", "mflo", "mtlo", "unknow", "unknow", "unknow", "unknow", "mult", "multu", "div", "divu", "unknow", "unknow", "unknow", "unknow",
                     "add", "addu", "sub", "subu", "and", "or", "xor", "nor", "slt", "sltu", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow",
                     "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow"};
-            Log.debug(String.format("PC: %x, Type R: inst: %s, op: %d, shamt: %d, rd: %d, rt: %d, rs: %d, name: %s", regPC, Integer.toHexString(instruct), func, shamt, rd, rt, rs, names[func]));
+            debug(String.format("PC: %x, Type R: inst: %s, op: %d, shamt: %d, rd: %d, rt: %d, rs: %d, name: %s", regPC, Integer.toHexString(instruct), func, shamt, rd, rt, rs, names[func]));
         }
         switch (func) {
 
@@ -178,14 +186,14 @@ public class ModuleCPU_MIPS implements IModuleCPU {
                     throwException(6);
                     return;
                 }
-                regPC = getRegister(rs);
+                jump = getRegister(rs);
                 break;
             case 0x9://jalr
                 if (getRegister(rs) == -1 || getRegister(rs) == 0) {
                     throwException(6);
                 }
                 setRegister(rt, regPC);
-                regPC = getRegister(rs);
+                jump = getRegister(rs);
                 break;
 
             case 0x10://mfhi
@@ -298,18 +306,20 @@ public class ModuleCPU_MIPS implements IModuleCPU {
         int dir = ComputerUtilsKt.getBitsFromInt(instruct, 0, 25, false);
         int code = ComputerUtilsKt.getBitsFromInt(instruct, 26, 31, false);
         if (debug) {
-            Log.debug(String.format("PC: %x, Type J: inst: %s, op: %d, dir: %d, new dir: %d", regPC, Integer.toHexString(instruct), code, dir,
+            debug(String.format("PC: %x, Type J: inst: %s, op: %d, dir: %d, new dir: %d", regPC, Integer.toHexString(instruct), code, dir,
                     (regPC & 0xF0000000) | dir << 2));
         }
         switch (code) {
             case 0x2://j
-                regPC &= 0xF0000000;
-                regPC |= dir << 2;
+                jump = regPC;
+                jump &= 0xF0000000;
+                jump |= dir << 2;
                 break;
             case 0x3://jal
                 setRegister(31, regPC);
-                regPC &= 0xF0000000;
-                regPC |= dir << 2;
+                jump = regPC;
+                jump &= 0xF0000000;
+                jump |= dir << 2;
                 break;
             default:
                 throwException(1);
@@ -333,38 +343,38 @@ public class ModuleCPU_MIPS implements IModuleCPU {
                     "lb", "lh", "unknow", "lw", "lbu", "lhu", "unknow", "unknow", "sb", "sh", "unknow", "sw", "unknow", "unknow", "unknow", "unknow", "unknow",
                     "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow"};
 
-            Log.debug(String.format("PC: %x, Type I: inst: %x, op: %d, rt: %d, rs: %d, inmed: %d, inmedU: %d, name: %s", regPC, instruct, opcode, rt, rs, inmed, inmedU, names[opcode]));
+            debug(String.format("PC: %x, Type I: inst: %x, op: %d, rt: %d, rs: %d, inmed: %d, inmedU: %d, name: %s", regPC, instruct, opcode, rt, rs, inmed, inmedU, names[opcode]));
         }
         switch (opcode) {
             case 0x1:
                 if (rt == 1) {//bgez
                     if (getRegister(rs) >= 0) {
-                        regPC += (inmed << 2);
+                        jump = regPC + (inmed << 2);
                     }
                 } else if (rt == 0) {//bltz
                     if (getRegister(rs) < 0) {
-                        regPC += (inmed << 2);
+                        jump = regPC + (inmed << 2);
                     }
                 }
                 break;
             case 0x4://beq
                 if (getRegister(rt) == getRegister(rs)) {
-                    regPC += (inmed << 2);
+                    jump = regPC + (inmed << 2);
                 }
                 break;
             case 0x5://bne
                 if (getRegister(rt) != getRegister(rs)) {
-                    regPC += (inmed << 2);
+                    jump = regPC + (inmed << 2);
                 }
                 break;
             case 0x6://blez
                 if (getRegister(rs) <= 0) {
-                    regPC += (inmed << 2);
+                    jump = regPC + (inmed << 2);
                 }
                 break;
             case 0x7://bgtz
                 if (getRegister(rs) > 0) {
-                    regPC += (inmed << 2);
+                    jump = regPC + (inmed << 2);
                 }
                 break;
             case 0x8://addi
@@ -479,28 +489,29 @@ public class ModuleCPU_MIPS implements IModuleCPU {
     }
 
     public void throwException(int flag) {
-        if (debug) {
+//        if (debug) {
             regPC -= 4;
-            Log.debug("Exception: " + flag + ", PC: " + Integer.toHexString(regPC) + ", Instruction: " + Integer.toHexString(mmu.readInstruction(regPC)));
-
+            debug("Exception: " + flag + ", PC: " + Integer.toHexString(regPC) + ", Instruction: " + Integer.toHexString(mmu.readInstruction(regPC)));
+            debug("jump: 0x"+Integer.toHexString(jump));
             for (int i = -10; i < 10; i++) {
                 StringBuilder builder = new StringBuilder();
                 builder.append("PC: 0x").append(Integer.toHexString(regPC + i));
+
                 if (i == 0) {
                     builder.append(" || ");
                 } else {
                     builder.append(" :: ");
                 }
                 builder.append("0x").append(Integer.toHexString(mmu.readWord(regPC + i))).append(" ");
-                Log.debug(builder.toString());
+                debug(builder.toString());
             }
 
-            Log.debug("Registers: ");
+            debug("Registers: ");
             for (int i = 0; i < 32; i++) {
-                Log.debug("$" + i + " " + Integer.toHexString(getRegister(i)));
+                debug("$" + i + " " + Integer.toHexString(getRegister(i)));
             }
             stop();
-        }
+//        }
 //        else {
 //            if ((regStatus & (flag + 1)) == 0) {
 //                return;
@@ -567,5 +578,9 @@ public class ModuleCPU_MIPS implements IModuleCPU {
         this.mmu = mmu;
         mmu.setCPU(this);
         mmu.setRAM(memory);
+    }
+
+    private void debug(Object t){
+        System.out.println(String.valueOf(t));
     }
 }

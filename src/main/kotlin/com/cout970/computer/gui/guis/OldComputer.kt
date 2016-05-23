@@ -12,6 +12,7 @@ import com.cout970.computer.util.vector.Vec2d
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.entity.player.InventoryPlayer
 import net.minecraft.util.ResourceLocation
+import net.minecraftforge.items.SlotItemHandler
 
 /**
  * Created by cout970 on 20/05/2016.
@@ -64,6 +65,7 @@ class GuiOldComputerBack(val tile: TileOldComputer, inv: InventoryPlayer) : GuiB
 class ContainerOldComputerBack(val tile: TileOldComputer, val inv: InventoryPlayer) : ContainerBase() {
 
     init {
+        addSlotToContainer(SlotItemHandler(tile.motherboard, 0, 11, 9))
         bindPlayerInventory(inv)
     }
 }
