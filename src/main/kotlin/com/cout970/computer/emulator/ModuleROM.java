@@ -17,22 +17,10 @@ public class ModuleROM implements IModuleROM {
         InputStream archive;
         try {
             archive = ComputerUtilsKt.getInputStream("bios.bin");
-            byte[] buffer = new byte[0x4000];
+            byte[] buffer = new byte[0x1000];
             int readed = archive.read(buffer, 0, buffer.length);
             for (int i = 0; i < readed; i++) {
-                ram.writeByte(0x001000 + i, buffer[i]);
-            }
-            archive.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            archive = ComputerUtilsKt.getInputStream("bios2.bin");
-            byte[] buffer = new byte[0x4000];
-            int readed = archive.read(buffer, 0, buffer.length);
-            for (int i = 0; i < readed; i++) {
-                ram.writeByte(0x005000 + i, buffer[i]);
+                ram.writeByte(0x0400 + i, buffer[i]);
             }
             archive.close();
         } catch (IOException e) {

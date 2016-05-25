@@ -8,6 +8,13 @@ import net.minecraft.nbt.NBTTagCompound;
 
 public class ModuleCPU_MIPS implements IModuleCPU {
 
+    public static final String[] registerNames = {"z0", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2",
+            "t3", "t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8", "t9", "k0", "k1",
+            "gp", "sp", "fp", "ra"};
+
+    //TODO remove tlb miss and add something more dynamic for exception
+    public static final String[] exceptionNames = {"HARDWARE ERROR", "INVALID INSTRUCTION", "ARITHMETIC EXCEPTION",
+            "SYSCALL", "TLB MISS?!?!?!??", "READ/WRITE NOT ALIGNED WITH WORD BOUNDARIES", "NULL POINTER EXCEPTION"};
     //debug mode to see where the emulator fails
     protected boolean debug = true;
     protected IModuleRAM memory;
@@ -16,14 +23,13 @@ public class ModuleCPU_MIPS implements IModuleCPU {
     protected int regHI = 0;
     protected int regLO = 0;
     protected int regPC = 0;
+    protected int pfPC = 0;
     //exceptions
     protected int regStatus = 0;
     protected int regCause = 0;
     protected int regEPC = 0;
     //
     protected int jump = -1;
-
-    protected int enableMMU = 0;
 
     protected int cpuCycles = -1;
 
@@ -49,11 +55,11 @@ public class ModuleCPU_MIPS implements IModuleCPU {
     public void reset() {
         cpuCycles = 0;
         memory.clear();
-        regPC = 0x00400000;
+        regPC = 0x00400;//1024
         regStatus = 0x0000FFFF;
         regCause = 0;
         regEPC = 0;
-        mmu.activeTranslation(true);
+        mmu.activeTranslation(false);
         for (int i = 0; i < getRegisterCount(); i++) {
             setRegister(i, 0);
         }
@@ -64,7 +70,7 @@ public class ModuleCPU_MIPS implements IModuleCPU {
     public void iterate() {
         if (cpuCycles >= 0) {
             if (debug) {
-                cpuCycles += 100;
+                cpuCycles += 1;
             } else {
                 cpuCycles += 2000;//CPU clock speed / 20 ticks
             }
@@ -80,10 +86,10 @@ public class ModuleCPU_MIPS implements IModuleCPU {
     }
 
     public void advancePC() {
-        if(jump != -1){
+        if (jump != -1) {
             regPC = jump;
             jump = -1;
-        }else {
+        } else {
             regPC = (regPC + 4);
         }
     }
@@ -94,6 +100,9 @@ public class ModuleCPU_MIPS implements IModuleCPU {
 
     public void setRegister(int s, int val) {
         if (s == 0) return;
+//        if(debug) {
+//            log("Reg: %s, change from 0x%08x (%d) to 0x%08x (%d)", registerNames[s], registers[s], registers[s], val, val);
+//        }
         registers[s] = val;
     }
 
@@ -108,8 +117,11 @@ public class ModuleCPU_MIPS implements IModuleCPU {
     }
 
     private void executeInstruction() {
+        pfPC = regPC;
         int instruct = mmu.readInstruction(regPC);
         advancePC();
+        if (debug)
+        debugInst(instruct);
         switch (CONTROL(instruct)) {
             case R:
                 TypeR(instruct);
@@ -153,14 +165,7 @@ public class ModuleCPU_MIPS implements IModuleCPU {
         rd = ComputerUtilsKt.getBitsFromInt(instruct, 11, 15, false);
         rt = ComputerUtilsKt.getBitsFromInt(instruct, 16, 20, false);
         rs = ComputerUtilsKt.getBitsFromInt(instruct, 21, 25, false);
-        if (debug) {
-            String[] names = {
-                    "sll", "unknow", "srl", "sra", "sllv", "unknow", "srlv", "srav", "jr", "jalr", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow",
-                    "mfhi", "mthi", "mflo", "mtlo", "unknow", "unknow", "unknow", "unknow", "mult", "multu", "div", "divu", "unknow", "unknow", "unknow", "unknow",
-                    "add", "addu", "sub", "subu", "and", "or", "xor", "nor", "slt", "sltu", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow",
-                    "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow"};
-            debug(String.format("PC: %x, Type R: inst: %s, op: %d, shamt: %d, rd: %d, rt: %d, rs: %d, name: %s", regPC, Integer.toHexString(instruct), func, shamt, rd, rt, rs, names[func]));
-        }
+
         switch (func) {
 
             case 0x0://sll
@@ -304,12 +309,9 @@ public class ModuleCPU_MIPS implements IModuleCPU {
 
     public void TypeJ(int instruct) {
         int dir = ComputerUtilsKt.getBitsFromInt(instruct, 0, 25, false);
-        int code = ComputerUtilsKt.getBitsFromInt(instruct, 26, 31, false);
-        if (debug) {
-            debug(String.format("PC: %x, Type J: inst: %s, op: %d, dir: %d, new dir: %d", regPC, Integer.toHexString(instruct), code, dir,
-                    (regPC & 0xF0000000) | dir << 2));
-        }
-        switch (code) {
+        int opcode = ComputerUtilsKt.getBitsFromInt(instruct, 26, 31, false);
+
+        switch (opcode) {
             case 0x2://j
                 jump = regPC;
                 jump &= 0xF0000000;
@@ -336,15 +338,7 @@ public class ModuleCPU_MIPS implements IModuleCPU {
         rt = ComputerUtilsKt.getBitsFromInt(instruct, 16, 20, false);
         inmed = ComputerUtilsKt.getBitsFromInt(instruct, 0, 15, true);
         inmedU = ComputerUtilsKt.getBitsFromInt(instruct, 0, 15, false);
-        if (debug) {
-            String[] names = {
-                    "unknow", "bgez", "unknow", "unknow", "beq", "bne", "blez", "bgtz", "addi", "addiu", "slti", "sltiu", "andi", "ori", "xori", "lui",
-                    "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "llo", "lhi", "trap", "unknow", "unknow", "unknow", "unknow", "unknow",
-                    "lb", "lh", "unknow", "lw", "lbu", "lhu", "unknow", "unknow", "sb", "sh", "unknow", "sw", "unknow", "unknow", "unknow", "unknow", "unknow",
-                    "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow", "unknow"};
 
-            debug(String.format("PC: %x, Type I: inst: %x, op: %d, rt: %d, rs: %d, inmed: %d, inmedU: %d, name: %s", regPC, instruct, opcode, rt, rs, inmed, inmedU, names[opcode]));
-        }
         switch (opcode) {
             case 0x1:
                 if (rt == 1) {//bgez
@@ -381,7 +375,7 @@ public class ModuleCPU_MIPS implements IModuleCPU {
                 setRegister(rt, getRegister(rs) + inmed);
                 break;
             case 0x9://addiu
-                setRegister(rt, getRegister(rs) + inmedU);
+                setRegister(rt, getRegister(rs) + inmed);
                 break;
             case 0xa://slti
                 if (getRegister(rs) < inmed)
@@ -488,29 +482,79 @@ public class ModuleCPU_MIPS implements IModuleCPU {
         throwException(1);
     }
 
+    private void debugInst(int instruct) {
+        if (instruct == 0) {
+            log("PC: 0x%08x \t NOP", pfPC);
+            return;
+        }
+
+        int opcode = ComputerUtilsKt.getBitsFromInt(instruct, 26, 31, false);
+
+        if (instruct == 0x0000000c || opcode == 0x10) {
+            log("Exception: inst: 0x%08x, inst: %d", instruct, instruct);
+
+        } else if (opcode == 0) {//type R
+
+            String[] names = {
+                    "SLL  ", "UNKNOW", "SRL  ", "SRA  ", "SLLV ", "UNKNOW", "SRLV ", "SRAV ", "JR   ", "JALR ", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW",
+                    "MFHI ", "MTHI ", "MFLO ", "MTLO ", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "MULT ", "MULTU", "DIV  ", "DIVU ", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW",
+                    "ADD  ", "ADDU ", "SUB  ", "SUBU ", "AND  ", "OR   ", "XOR  ", "NOR  ", "UNKNOW", "UNKNOW", "SLT  ", "SLTU ", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW",
+                    "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW"};
+            int rs, rt, rd, shamt, func;
+            func = ComputerUtilsKt.getBitsFromInt(instruct, 0, 5, false);
+            shamt = ComputerUtilsKt.getBitsFromInt(instruct, 6, 10, false);
+            rd = ComputerUtilsKt.getBitsFromInt(instruct, 11, 15, false);
+            rt = ComputerUtilsKt.getBitsFromInt(instruct, 16, 20, false);
+            rs = ComputerUtilsKt.getBitsFromInt(instruct, 21, 25, false);
+            log("PC: 0x%08x \t %s $%s, $%s, $%s (%05d) \t Type R: inst: 0x%08x", pfPC, names[func], registerNames[rd], registerNames[rs], registerNames[rt], shamt, instruct);
+
+        } else if (opcode == 0x2 || opcode == 0x3) {//type J
+
+            String[] names = {"UNKNOW", "UNKNOW", "J    ", "JAL  "};
+            int dir = ComputerUtilsKt.getBitsFromInt(instruct, 0, 25, false);
+            log("PC: 0x%08x \t %s 0x%08x (0x%08x) \t Type J: inst: 0x%08x", pfPC, names[opcode], dir, (regPC & 0xF0000000) | dir << 2, instruct);
+
+        } else {//type I
+
+            String[] names = {"UNKNOW", "BGEZ", "UNKNOW", "UNKNOW", "BEQ  ", "BNE  ", "BLEZ ", "BGTZ ", "ADDI ", "ADDIU", "SLTI ", "SLTIU", "ANDI ", "ORI  ", "XORI ", "LUI  ",
+                    "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "LLO  ", "LHI  ", "TRAP ", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW",
+                    "LB   ", "LH   ", "UNKNOW", "LW   ", "LBU  ", "LHU  ", "UNKNOW", "UNKNOW", "SB   ", "SH   ", "UNKNOW", "SW   ", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW",
+                    "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW", "UNKNOW"};
+            int rs, rt, inmed, inmedU;
+            rs = ComputerUtilsKt.getBitsFromInt(instruct, 21, 25, false);
+            rt = ComputerUtilsKt.getBitsFromInt(instruct, 16, 20, false);
+            inmed = ComputerUtilsKt.getBitsFromInt(instruct, 0, 15, true);
+            inmedU = ComputerUtilsKt.getBitsFromInt(instruct, 0, 15, false);
+            log("PC: 0x%08x \t %s $%s, $%s, %05d (%05d) \t Type I: inst: 0x%08x", pfPC, names[opcode], registerNames[rs], registerNames[rt], inmed, inmedU, instruct);
+        }
+    }
+
+    private void log(String s, Object... objs) {
+        debug(String.format(s, objs));
+    }
+
+    /**
+     * generates an interruption in the cpu
+     * 6: invalid jump point
+     * 5: not aligned with word boundary,
+     * 4: tlb miss
+     * 3: syscall/trap
+     * 2: arithmetic exception
+     * 1: invalid instruction
+     * 0: external (hardware failure)
+     */
     public void throwException(int flag) {
 //        if (debug) {
-            regPC -= 4;
-            debug("Exception: " + flag + ", PC: " + Integer.toHexString(regPC) + ", Instruction: " + Integer.toHexString(mmu.readInstruction(regPC)));
-            debug("jump: 0x"+Integer.toHexString(jump));
-            for (int i = -10; i < 10; i++) {
-                StringBuilder builder = new StringBuilder();
-                builder.append("PC: 0x").append(Integer.toHexString(regPC + i));
+        int inst = mmu.readInstruction(pfPC);
+        String name = flag >= 0 && flag < exceptionNames.length ? exceptionNames[flag] : "UNKNOW";
+        log("Exception: %d (%s), regPC: 0x%08x, pfPC: 0x%08x", flag, name, regPC, pfPC);
+        debugInst(inst);
 
-                if (i == 0) {
-                    builder.append(" || ");
-                } else {
-                    builder.append(" :: ");
-                }
-                builder.append("0x").append(Integer.toHexString(mmu.readWord(regPC + i))).append(" ");
-                debug(builder.toString());
-            }
-
-            debug("Registers: ");
-            for (int i = 0; i < 32; i++) {
-                debug("$" + i + " " + Integer.toHexString(getRegister(i)));
-            }
-            stop();
+        debug("Registers: ");
+        for (int i = 0; i < 32; i++) {
+            log("\t %d: \t %s : 0x%08x (%08d)", i, registerNames[i], getRegister(i), getRegister(i));
+        }
+        stop();
 //        }
 //        else {
 //            if ((regStatus & (flag + 1)) == 0) {
@@ -580,7 +624,7 @@ public class ModuleCPU_MIPS implements IModuleCPU {
         mmu.setRAM(memory);
     }
 
-    private void debug(Object t){
+    private void debug(Object t) {
         System.out.println(String.valueOf(t));
     }
 }

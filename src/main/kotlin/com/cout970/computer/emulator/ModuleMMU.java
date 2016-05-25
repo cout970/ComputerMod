@@ -2,7 +2,6 @@ package com.cout970.computer.emulator;
 
 import com.cout970.computer.api.*;
 import com.cout970.computer.util.ComputerUtilsKt;
-import jline.internal.Log;
 import net.minecraft.nbt.NBTTagCompound;
 
 /**
@@ -49,7 +48,7 @@ public class ModuleMMU implements IModuleMMU {
                 }
             }
         }
-        Log.debug(String.format("addr: %x, desc: %x", addr, desc));
+//        Log.debug(String.format("addr: %x, desc: %x", addr, desc));
         //cpu.throwException(4);
 //        if((addr & 0x00400000) > 0){
 //           return addr & 0xFFFF;

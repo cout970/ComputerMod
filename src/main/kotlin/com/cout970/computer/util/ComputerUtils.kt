@@ -66,7 +66,7 @@ fun genSerialNumber(): String {
     var serial = ""
     val r = Random()
     for (i in 0..15) {
-        serial += Integer.toHexString(r.nextInt(16))
+        serial += Integer.toHexString(r.nextInt(16)).toUpperCase()
     }
     return serial
 }
