@@ -1,0 +1,11 @@
+{
+    "forge_marker": 1,
+    "variants": {
+        "normal": {
+            "model": "computer:old_computer"
+        },
+        "inventory": {
+            "model": "computer:old_computer"
+        }
+    }
+}

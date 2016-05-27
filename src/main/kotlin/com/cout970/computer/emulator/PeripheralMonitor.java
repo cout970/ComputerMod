@@ -18,14 +18,18 @@ public class PeripheralMonitor implements IPeripheralMonitor, IMessageStorage {
     //the address used in the computer to access to this peripheral
     public static final int KEYBOARD_MASK = 0xff010000;
     protected TileEntity parent;
-    protected byte[] buffer;
     protected int address = 0x1;
-    protected int regReady;
-    protected int regChar;
+    protected int regKeyBufferPtr;
+    protected int regKeyBufferSize;
+    protected byte[] keyBuffer;
+    protected int regMouseButton;
+    protected int regMouseX;
+    protected int regMouseY;
     protected int regCursor;
-    protected int regCursorClick;
-    protected int regCursorPosX;
-    protected int regCursorPosY;
+    protected int regCursorMark;
+    protected byte[] buffer;
+    protected boolean hasKeyPressed;
+    protected int keyPressed;
 
     public PeripheralMonitor(TileEntity parent) {
         this.parent = parent;
@@ -51,61 +55,116 @@ public class PeripheralMonitor implements IPeripheralMonitor, IMessageStorage {
         return !parent.isInvalid();
     }
 
+//DEVICE STRUCTURE
+
+    //*    */        //device data
+//* 00 */        byte active;            // active flag, shows if the device is connected;
+//* 01 */        byte id;                // id, shows the type of the device, id: 0 Motherboard, id: 1 Monitor id: 2 Diskdrive id: 3-255 unknown
+//*    */
+//*    */        //keyboard data
+//* 02 */        byte keyBufferPtr;      // saves the position of the keyBuffer the where the las key has been stored
+//* 03 */        byte keyBufferSize;     // stores the amount of keys stored in the buffer, the max value is 8
+//* 04 */        char keyBuffer[8];      // stores the keys pressed by the keyboard in a circular array, where keyBufferPtr indicates
+//*    */                                // the first value and (keyBufferPtr+keyBufferSize)%8 indicates the last value
+//*    */
+//*    */        //mouse data
+//* 12 */        int mouseButton;        // the button used by the mouse in the last click on the screen
+//* 16 */        int mouseX;             // the xCoord of the last mouse click on the screen
+//* 20 */        int mouseY;             // the yCoord of the last mouse click on the screen
+//*    */
+//*    */        //screen data
+//* 24 */        int size;               // size of the screen (lines*columns)
+//* 28 */        int lines;              // number of lines in the monitor
+//* 32 */        int columns;            // size of the lines in the monitor
+//*    */
+//*    */        //text buffer
+//* 36 */        int cursor;             // the position of the screen where the cursor should be displayed
+//* 40 */        int cursorMark;         // the cursor that marks when the next char should be placed
+//* 44 */        byte buffer[0];         // buffer stores the chars in the monitor, the size of the buffer may change
+//*    */                                // between monitors, to get the size use Monitor.size
+
     @Override
     public byte readByte(int pointer) {
         switch (pointer) {
-            case 0:// active byte
+            case 0://0 byte active
                 return (byte) (isActive() ? 1 : 0);
-            case 1:// key pulsed flag
-                return (byte) regReady;
-            case 2:// key pulsed code
-                return (byte) regChar;
-            case 3:// cursor clicked button
-                // 0: none, 1: left, 2: right, 3: center
-                return (byte) regCursorClick;
-            case 4:// lines
-                return (byte) (getLines() >>> 24);
-            case 5:
-                return (byte) (getLines() >>> 16);
-            case 6:
-                return (byte) (getLines() >>> 8);
-            case 7:
-                return (byte) (getLines());
-            case 8:// columns
-                return (byte) (getColumns() >>> 24);
-            case 9:
-                return (byte) (getColumns() >>> 16);
-            case 10:
-                return (byte) (getColumns() >>> 8);
-            case 11:
-                return (byte) (getColumns());
-            case 12:// cursor
-                return (byte) (regCursor >>> 24);
+            case 1://1 byte id
+                return (byte) 1;
+            case 2://2 byte keyBufferPtr
+                return (byte) regKeyBufferPtr;
+            case 3://3 byte keyBufferSize
+                return (byte) regKeyBufferSize;
+            case 12://12 int mouse button
+                return (byte) (regMouseButton >>> 24);
             case 13:
-                return (byte) (regCursor >>> 16);
+                return (byte) (regMouseButton >>> 16);
             case 14:
-                return (byte) (regCursor >>> 8);
+                return (byte) (regMouseButton >>> 8);
             case 15:
-                return (byte) (regCursor);
-            case 16:// cursor click X
-                return (byte) (regCursorPosX >>> 24);
+                return (byte) (regMouseButton);
+            case 16://16 int mouse X
+                return (byte) (regMouseX >>> 24);
             case 17:
-                return (byte) (regCursorPosX >>> 16);
+                return (byte) (regMouseX >>> 16);
             case 18:
-                return (byte) (regCursorPosX >>> 8);
+                return (byte) (regMouseX >>> 8);
             case 19:
-                return (byte) (regCursorPosX);
-            case 20:// cursor click Y
-                return (byte) (regCursorPosY >>> 24);
+                return (byte) (regMouseX);
+            case 20://20 int mouse Y
+                return (byte) (regMouseY >>> 24);
             case 21:
-                return (byte) (regCursorPosY >>> 16);
+                return (byte) (regMouseY >>> 16);
             case 22:
-                return (byte) (regCursorPosY >>> 8);
+                return (byte) (regMouseY >>> 8);
             case 23:
-                return (byte) (regCursorPosY);
+                return (byte) (regMouseY);
+            case 24://24 int size
+                return (byte) (getBufferSize() >>> 24);
+            case 25:
+                return (byte) (getBufferSize() >>> 16);
+            case 26:
+                return (byte) (getBufferSize() >>> 8);
+            case 27:
+                return (byte) (getBufferSize());
+            case 28://28 int lines
+                return (byte) (getLines() >>> 24);
+            case 29:
+                return (byte) (getLines() >>> 16);
+            case 30:
+                return (byte) (getLines() >>> 8);
+            case 31:
+                return (byte) (getLines());
+            case 32://32 int columns
+                return (byte) (getColumns() >>> 24);
+            case 33:
+                return (byte) (getColumns() >>> 16);
+            case 34:
+                return (byte) (getColumns() >>> 8);
+            case 35:
+                return (byte) (getColumns());
+            case 36://36 int cursor
+                return (byte) (regCursor >>> 24);
+            case 37:
+                return (byte) (regCursor >>> 16);
+            case 38:
+                return (byte) (regCursor >>> 8);
+            case 39:
+                return (byte) (regCursor);
+            case 40://40 int cursor
+                return (byte) (regCursorMark >>> 24);
+            case 41:
+                return (byte) (regCursorMark >>> 16);
+            case 42:
+                return (byte) (regCursorMark >>> 8);
+            case 43:
+                return (byte) (regCursorMark);
         }
-        if (pointer >= 24 && pointer < 24 + getBufferSize()) {
-            return getBuffer()[pointer - 24];
+        if (pointer >= 4 && pointer < 12) {//4 char keyBuffer[8]
+            return getKeyBuffer()[pointer - 4];
+        }
+        pointer -= 44;
+        if (pointer >= 0 && pointer < getBufferSize()) {
+            return getBuffer()[pointer];
         }
         return 0;
     }
@@ -113,65 +172,82 @@ public class PeripheralMonitor implements IPeripheralMonitor, IMessageStorage {
     @Override
     public void writeByte(int pointer, byte data) {
         switch (pointer) {
-            case 0:
+            case 0://0 byte active
+            case 1://1 byte id
                 return;
-            case 1:
-                regReady = data;
+            case 2://2 byte keyBufferPtr
+                regKeyBufferPtr = data;
                 return;
-            case 2:
-                regChar = data;
+            case 3://3 byte keyBufferSize
+                regKeyBufferSize = data;
                 return;
-            case 3:
-                regCursorClick = data;
-                return;
-            case 4:
-            case 5:
-            case 6:
-            case 7:
-            case 8:
-            case 9:
-            case 10:
-            case 11:
-                return;
-            case 12:// cursor
-                regCursor = (regCursor & 0x00FFFFFF) | (data << 24);
+            case 12://12 int mouseButton
+                regMouseButton = (regMouseButton & 0x00FFFFFF) | (data << 24);
                 return;
             case 13:
-                regCursor = (regCursor & 0xFF00FFFF) | (data << 16);
+                regMouseButton = (regMouseButton & 0xFF00FFFF) | (data << 16);
                 return;
             case 14:
-                regCursor = (regCursor & 0xFFFF00FF) | (data << 8);
+                regMouseButton = (regMouseButton & 0xFFFF00FF) | (data << 8);
                 return;
             case 15:
-                regCursor = (regCursor & 0xFFFFFF00) | data;
+                regMouseButton = (regMouseButton & 0xFFFFFF00) | data;
                 return;
-            case 16:// cursorX
-                regCursorPosX = (regCursorPosX & 0x00FFFFFF) | (data << 24);
+            case 16://16 int mouseX
+                regMouseX = (regMouseX & 0x00FFFFFF) | (data << 24);
                 return;
             case 17:
-                regCursorPosX = (regCursorPosX & 0xFF00FFFF) | (data << 16);
+                regMouseX = (regMouseX & 0xFF00FFFF) | (data << 16);
                 return;
             case 18:
-                regCursorPosX = (regCursorPosX & 0xFFFF00FF) | (data << 8);
+                regMouseX = (regMouseX & 0xFFFF00FF) | (data << 8);
                 return;
             case 19:
-                regCursorPosX = (regCursorPosX & 0xFFFFFF00) | data;
+                regMouseX = (regMouseX & 0xFFFFFF00) | data;
                 return;
-            case 20:// cursorY
-                regCursorPosY = (regCursorPosY & 0x00FFFFFF) | (data << 24);
+            case 20://int mouseY
+                regMouseY = (regMouseY & 0x00FFFFFF) | (data << 24);
                 return;
             case 21:
-                regCursorPosY = (regCursorPosY & 0xFF00FFFF) | (data << 16);
+                regMouseY = (regMouseY & 0xFF00FFFF) | (data << 16);
                 return;
             case 22:
-                regCursorPosY = (regCursorPosY & 0xFFFF00FF) | (data << 8);
+                regMouseY = (regMouseY & 0xFFFF00FF) | (data << 8);
                 return;
             case 23:
-                regCursorPosY = (regCursorPosY & 0xFFFFFF00) | data;
+                regMouseY = (regMouseY & 0xFFFFFF00) | data;
+                return;
+            case 36://36 int cursor
+                regCursor = (regCursor & 0x00FFFFFF) | (data << 24);
+                return;
+            case 37:
+                regCursor = (regCursor & 0xFF00FFFF) | (data << 16);
+                return;
+            case 38:
+                regCursor = (regCursor & 0xFFFF00FF) | (data << 8);
+                return;
+            case 39:
+                regCursor = (regCursor & 0xFFFFFF00) | data;
+                return;
+            case 40://40 int cursorMark
+                regCursorMark = (regCursorMark & 0x00FFFFFF) | (data << 24);
+                return;
+            case 41:
+                regCursorMark = (regCursorMark & 0xFF00FFFF) | (data << 16);
+                return;
+            case 42:
+                regCursorMark = (regCursorMark & 0xFFFF00FF) | (data << 8);
+                return;
+            case 43:
+                regCursorMark = (regCursorMark & 0xFFFFFF00) | data;
                 return;
         }
-        if (pointer >= 24 && pointer < 24 + getBufferSize()) {
-            getBuffer()[pointer - 24] = data;
+        if (pointer >= 4 && pointer < 12) {//4 char keyBuffer[8]
+            getKeyBuffer()[pointer - 4] = data;
+        }
+        pointer -= 44;
+        if (pointer >= 0 && pointer < getBufferSize()) {
+            getBuffer()[pointer] = data;
         }
     }
 
@@ -179,6 +255,11 @@ public class PeripheralMonitor implements IPeripheralMonitor, IMessageStorage {
     public byte[] getBuffer() {
         if (buffer == null || buffer.length != 4000) buffer = new byte[4000];
         return buffer;
+    }
+
+    public byte[] getKeyBuffer() {
+        if (keyBuffer == null || keyBuffer.length != 8) keyBuffer = new byte[8];
+        return keyBuffer;
     }
 
     @Override
@@ -193,8 +274,8 @@ public class PeripheralMonitor implements IPeripheralMonitor, IMessageStorage {
 
     @Override
     public void onKeyPressed(int key) {
-        regReady |= 1;
-        regChar = key;
+        hasKeyPressed = true;
+        keyPressed = key;
     }
 
     @Override
@@ -203,9 +284,9 @@ public class PeripheralMonitor implements IPeripheralMonitor, IMessageStorage {
 
     @Override
     public void onCursorClick(int x, int y, int button) {
-        regCursorPosX = x;
-        regCursorPosY = y;
-        regCursorClick = 1 << button;
+        regMouseX = x;
+        regMouseY = y;
+        regMouseButton = 1 << button;
     }
 
     @Override
@@ -253,12 +334,14 @@ public class PeripheralMonitor implements IPeripheralMonitor, IMessageStorage {
         NBTTagList list = main.getTagList("OldMonitor", 11);
         NBTTagCompound nbt = list.getCompoundTagAt(0);
         address = nbt.getInteger("Address");
-        regChar = nbt.getInteger("Char");
+        regKeyBufferPtr = nbt.getInteger("KeyBufferPtr");
+        regKeyBufferSize = nbt.getInteger("KeyBufferSize");
+        keyBuffer = nbt.getByteArray("KeyBuffer");
+        regMouseButton = nbt.getInteger("MouseButton");
+        regMouseX = nbt.getInteger("MouseX");
+        regMouseY = nbt.getInteger("MouseY");
         regCursor = nbt.getInteger("Cursor");
-        regCursorClick = nbt.getInteger("CursorClick");
-        regCursorPosX = nbt.getInteger("CursorX");
-        regCursorPosY = nbt.getInteger("CursorY");
-        regReady = nbt.getInteger("Ready");
+        regCursorMark = nbt.getInteger("CursorMark");
         buffer = nbt.getByteArray("Buffer").clone();
         getBuffer();
     }
@@ -268,12 +351,14 @@ public class PeripheralMonitor implements IPeripheralMonitor, IMessageStorage {
         NBTTagList list = new NBTTagList();
         NBTTagCompound nbt = new NBTTagCompound();
         nbt.setInteger("Address", address);
-        nbt.setInteger("Char", regChar);
+        nbt.setInteger("KeyBufferPtr", regKeyBufferPtr);
+        nbt.setInteger("KeyBufferSize", regKeyBufferSize);
+        nbt.setByteArray("KeyBuffer", keyBuffer);
+        nbt.setInteger("MouseButton", regMouseButton);
+        nbt.setInteger("MouseX", regMouseX);
+        nbt.setInteger("MouseY", regMouseY);
         nbt.setInteger("Cursor", regCursor);
-        nbt.setInteger("CursorClick", regCursorClick);
-        nbt.setInteger("CursorX", regCursorPosX);
-        nbt.setInteger("CursorY", regCursorPosY);
-        nbt.setInteger("Ready", regReady);
+        nbt.setInteger("CursorMark", regCursorMark);
         nbt.setByteArray("Buffer", getBuffer());
         list.appendTag(nbt);
         main.setTag("OldMonitor", list);
@@ -281,19 +366,28 @@ public class PeripheralMonitor implements IPeripheralMonitor, IMessageStorage {
 
     @Override
     public void saveToMessage(ByteBuf buff, Side processSide) {
-        buff.writeByte(regReady);
-        buff.writeByte(regChar);
-        buff.writeByte(regCursorClick);
-        buff.writeInt(regCursorPosX);
-        buff.writeInt(regCursorPosY);
+        buff.writeByte(hasKeyPressed ? 1 : 0);
+        buff.writeByte(keyPressed);
+        buff.writeByte(regMouseButton);
+        buff.writeInt(regMouseX);
+        buff.writeInt(regMouseY);
     }
 
     @Override
     public void loadFromMessage(ByteBuf buff, Side processSide) {
-        regReady = buff.readByte();
-        regChar = buff.readByte();
-        regCursorClick = buff.readInt();
-        regCursorPosX = buff.readInt();
-        regCursorPosY = buff.readInt();
+        int hasPressed = buff.readByte();
+        int key  = buff.readByte();
+
+        if(hasPressed == 1) {
+            if (regKeyBufferSize != getKeyBuffer().length) {
+                System.out.println((regKeyBufferPtr + regKeyBufferSize) % keyBuffer.length + " " + regKeyBufferSize);
+                getKeyBuffer()[(regKeyBufferPtr + regKeyBufferSize) % keyBuffer.length] = (byte) key;
+                regKeyBufferSize++;
+            }
+        }
+
+        regMouseButton = buff.readInt();
+        regMouseX = buff.readInt();
+        regMouseY = buff.readInt();
     }
 }

@@ -121,7 +121,7 @@ public class ModuleCPU_MIPS implements IModuleCPU {
         int instruct = mmu.readInstruction(regPC);
         advancePC();
         if (debug)
-        debugInst(instruct);
+            debugInst(instruct);
         switch (CONTROL(instruct)) {
             case R:
                 TypeR(instruct);
