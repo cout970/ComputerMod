@@ -50,6 +50,7 @@ object Computer {
 
         registerBlocks()
         registerItems()
+        registerTileEntities()
         proxy.preInit()
 
         log.info("Pre-init done")

@@ -66,6 +66,12 @@ class ContainerOldComputerBack(val tile: TileOldComputer, val inv: InventoryPlay
 
     init {
         addSlotToContainer(SlotItemHandler(tile.motherboard, 0, 11, 9))
+        addSlotToContainer(SlotItemHandler(tile.motherboard, 1, 11+18, 9))
+        addSlotToContainer(SlotItemHandler(tile.motherboard, 2, 11+18*2, 9))
+
+        addSlotToContainer(SlotItemHandler(tile.motherboard, 3, 11, 9+18))
+        addSlotToContainer(SlotItemHandler(tile.motherboard, 4, 11+18, 9+18))
+        addSlotToContainer(SlotItemHandler(tile.motherboard, 5, 11+18*2, 9+18))
         bindPlayerInventory(inv)
     }
 }

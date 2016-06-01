@@ -4,7 +4,6 @@ import com.cout970.computer.api.IPeripheralMonitor;
 import com.cout970.computer.network.IMessageStorage;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -331,12 +330,12 @@ public class PeripheralMonitor implements IPeripheralMonitor, IMessageStorage {
 
     @Override
     public void load(NBTTagCompound main) {
-        NBTTagList list = main.getTagList("OldMonitor", 11);
-        NBTTagCompound nbt = list.getCompoundTagAt(0);
+        NBTTagCompound nbt = main.getCompoundTag("OldMonitor");
         address = nbt.getInteger("Address");
         regKeyBufferPtr = nbt.getInteger("KeyBufferPtr");
         regKeyBufferSize = nbt.getInteger("KeyBufferSize");
-        keyBuffer = nbt.getByteArray("KeyBuffer");
+        keyBuffer = nbt.getByteArray("KeyBuffer").clone();
+        getKeyBuffer();
         regMouseButton = nbt.getInteger("MouseButton");
         regMouseX = nbt.getInteger("MouseX");
         regMouseY = nbt.getInteger("MouseY");
@@ -348,20 +347,18 @@ public class PeripheralMonitor implements IPeripheralMonitor, IMessageStorage {
 
     @Override
     public void save(NBTTagCompound main) {
-        NBTTagList list = new NBTTagList();
         NBTTagCompound nbt = new NBTTagCompound();
         nbt.setInteger("Address", address);
         nbt.setInteger("KeyBufferPtr", regKeyBufferPtr);
         nbt.setInteger("KeyBufferSize", regKeyBufferSize);
-        nbt.setByteArray("KeyBuffer", keyBuffer);
+        nbt.setByteArray("KeyBuffer", getKeyBuffer());
         nbt.setInteger("MouseButton", regMouseButton);
         nbt.setInteger("MouseX", regMouseX);
         nbt.setInteger("MouseY", regMouseY);
         nbt.setInteger("Cursor", regCursor);
         nbt.setInteger("CursorMark", regCursorMark);
         nbt.setByteArray("Buffer", getBuffer());
-        list.appendTag(nbt);
-        main.setTag("OldMonitor", list);
+        main.setTag("OldMonitor", nbt);
     }
 
     @Override
@@ -380,7 +377,6 @@ public class PeripheralMonitor implements IPeripheralMonitor, IMessageStorage {
 
         if(hasPressed == 1) {
             if (regKeyBufferSize != getKeyBuffer().length) {
-                System.out.println((regKeyBufferPtr + regKeyBufferSize) % keyBuffer.length + " " + regKeyBufferSize);
                 getKeyBuffer()[(regKeyBufferPtr + regKeyBufferSize) % keyBuffer.length] = (byte) key;
                 regKeyBufferSize++;
             }

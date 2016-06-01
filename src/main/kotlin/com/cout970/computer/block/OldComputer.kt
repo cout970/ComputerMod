@@ -22,8 +22,9 @@ object OldComputer : BlockBase("old_computer", Material.CIRCUITS), ITileEntityPr
     override fun createNewTileEntity(worldIn: World?, meta: Int): TileEntity? = TileOldComputer()
 
     override fun onBlockActivated(worldIn: World?, pos: BlockPos?, state: IBlockState?, playerIn: EntityPlayer?, hand: EnumHand?, heldItem: ItemStack?, side: EnumFacing?, hitX: Float, hitY: Float, hitZ: Float): Boolean {
-        if (pos != null && worldIn != null && !worldIn.isRemote)
-            playerIn?.openGui(Computer, if(playerIn.isSneaking) 1 else 0, worldIn, pos.x, pos.y, pos.z)
-        return super.onBlockActivated(worldIn, pos, state, playerIn, hand, heldItem, side, hitX, hitY, hitZ)
+        if (pos != null && worldIn != null && !worldIn.isRemote) {
+            playerIn?.openGui(Computer, if (playerIn.isSneaking) 1 else 0, worldIn, pos.x, pos.y, pos.z)
+        }
+        return true;
     }
 }

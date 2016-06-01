@@ -5,6 +5,7 @@ import com.cout970.computer.api.IModuleRAM
 import com.cout970.computer.api.IModuleROM
 import com.cout970.computer.api.IPeripheralDiskDrive
 import com.cout970.computer.tileentity.TileOldComputer
+import net.minecraft.nbt.NBTTagCompound
 import net.minecraftforge.items.ItemStackHandler
 
 /**
@@ -55,5 +56,27 @@ class Motherboard(
             diskDrive!!.disk = getStackInSlot(0)
         }
         isAssembled = true
+    }
+
+    override fun deserializeNBT(nbt: NBTTagCompound?) {
+        assembly()
+        ram?.load(nbt)
+        cpu?.load(nbt)
+        diskDrive?.load(nbt)
+        hddDrive0?.load(nbt)
+        hddDrive1?.load(nbt)
+        super.deserializeNBT(nbt)
+        for (i in 0..slots - 1)
+            onContentsChanged(i);
+    }
+
+    override fun serializeNBT(): NBTTagCompound? {
+        val nbt = super.serializeNBT()
+        ram?.save(nbt)
+        cpu?.save(nbt)
+        diskDrive?.save(nbt)
+        hddDrive0?.save(nbt)
+        hddDrive1?.save(nbt)
+        return nbt
     }
 }

@@ -1,7 +1,7 @@
 package com.cout970.computer.misc
 
+import com.cout970.computer.item.ItemFloppyDisk
 import net.minecraft.creativetab.CreativeTabs
-import net.minecraft.init.Items
 import net.minecraft.item.Item
 
 /**
@@ -9,5 +9,5 @@ import net.minecraft.item.Item
  */
 object CreativeTab : CreativeTabs(MOD_ID) {
 
-    override fun getTabIconItem(): Item? = Items.DIAMOND
+    override fun getTabIconItem(): Item? = ItemFloppyDisk
 }

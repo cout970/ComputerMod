@@ -31,6 +31,7 @@ class TileOldComputer : TileBase(), IComputer, IServerButtonListener, IPeriphera
         if (!world.isRemote) {
             if (motherboard.isAssembled) {
                 motherboard.iterate()
+                markDirty()
             } else if (worldObj.totalWorldTime.toInt() % 40 == 0) {
                 motherboard.assembly()
             }
@@ -109,13 +110,15 @@ class TileOldComputer : TileBase(), IComputer, IServerButtonListener, IPeriphera
     }
 
     override fun readFromNBT(data: NBTTagCompound) {
+        super.readFromNBT(data)
         motherboard.deserializeNBT(data.getCompoundTag("inv"))
+        monitor.load(data)
     }
 
     override fun writeToNBT(data: NBTTagCompound): NBTTagCompound {
         data.setTag("inv", motherboard.serializeNBT())
         monitor.save(data)
-        return data
+        return super.writeToNBT(data)
     }
 
     override fun hasCapability(capability: Capability<*>?, facing: EnumFacing?): Boolean {

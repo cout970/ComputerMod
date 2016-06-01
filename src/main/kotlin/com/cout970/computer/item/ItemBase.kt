@@ -8,11 +8,11 @@ import net.minecraft.item.Item
 /**
  * Created by cout970 on 19/05/2016.
  */
-abstract class ItemBase(registryName : String) : Item() {
+abstract class ItemBase(registryName: String) : Item() {
 
-    init{
-        creativeTab = CreativeTab
-        this.unlocalizedName = "$MOD_ID.$registryName"
+    init {
         this.registryName = resource(registryName)
+        this.unlocalizedName = "$MOD_ID.$registryName"
+        creativeTab = CreativeTab
     }
 }

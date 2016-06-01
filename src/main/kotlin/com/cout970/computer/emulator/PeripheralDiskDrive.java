@@ -358,7 +358,16 @@ public class PeripheralDiskDrive implements IPeripheralDiskDrive {
         try {
             acces = new RandomAccessFile(f, "r");
             acces.seek(getSector() * getSectorSize());
-            int readed = acces.read(getRawBuffer());
+            int read = acces.read(getRawBuffer());
+            if(read == -1){
+                for(int i = 0; i < storage.getSectorSize(item); i++){
+                    getRawBuffer()[i] = 0;
+                }
+            }else if(read < storage.getSectorSize(item)){
+                for(int i = read; i < storage.getSectorSize(item); i++){
+                    getRawBuffer()[i] = 0;
+                }
+            }
             regAction = 0;
         } catch (IOException e) {
             regAction = -1;

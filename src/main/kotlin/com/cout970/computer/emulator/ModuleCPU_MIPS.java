@@ -16,7 +16,7 @@ public class ModuleCPU_MIPS implements IModuleCPU {
     public static final String[] exceptionNames = {"HARDWARE ERROR", "INVALID INSTRUCTION", "ARITHMETIC EXCEPTION",
             "SYSCALL", "TLB MISS?!?!?!??", "READ/WRITE NOT ALIGNED WITH WORD BOUNDARIES", "NULL POINTER EXCEPTION"};
     //debug mode to see where the emulator fails
-    protected boolean debug = true;
+    protected boolean debug = false;
     protected IModuleRAM memory;
     protected IModuleMMU mmu;
     protected int[] registers = new int[32];
@@ -568,20 +568,24 @@ public class ModuleCPU_MIPS implements IModuleCPU {
     }
 
     @Override
-    public void load(NBTTagCompound nbt) {
-        registers = nbt.getIntArray("Regs");
-        if (registers.length != 32) registers = new int[32];
-        cpuCycles = nbt.getInteger("Cycles");
-        regPC = nbt.getInteger("PC");
-        regHI = nbt.getInteger("regHI");
-        regLO = nbt.getInteger("regLO");
-        regStatus = nbt.getInteger("Status");
-        regCause = nbt.getInteger("Cause");
-        regEPC = nbt.getInteger("EPC");
+    public void load(NBTTagCompound tag) {
+        if(tag.hasKey("CPU")) {
+            NBTTagCompound nbt = tag.getCompoundTag("CPU");
+            registers = nbt.getIntArray("Regs");
+            if (registers.length != 32) registers = new int[32];
+            cpuCycles = nbt.getInteger("Cycles");
+            regPC = nbt.getInteger("PC");
+            regHI = nbt.getInteger("regHI");
+            regLO = nbt.getInteger("regLO");
+            regStatus = nbt.getInteger("Status");
+            regCause = nbt.getInteger("Cause");
+            regEPC = nbt.getInteger("EPC");
+        }
     }
 
     @Override
-    public void save(NBTTagCompound nbt) {
+    public void save(NBTTagCompound tag) {
+        NBTTagCompound nbt = new NBTTagCompound();
         nbt.setIntArray("Regs", registers);
         nbt.setInteger("Cycles", cpuCycles);
         nbt.setInteger("PC", regPC);
@@ -590,6 +594,7 @@ public class ModuleCPU_MIPS implements IModuleCPU {
         nbt.setInteger("Status", regStatus);
         nbt.setInteger("Cause", regCause);
         nbt.setInteger("EPC", regEPC);
+        tag.setTag("CPU", nbt);
     }
 
     @Override

@@ -1,0 +1,5 @@
+item.computer.floppy_disk_tier_1.name=Floppy Disk
+item.computer.mips_cpu.name=MIPS CPU
+
+itemGroup.computer=Computer
+tile.computer.old_computer.name=Old Computer

@@ -9,4 +9,6 @@ import net.minecraft.item.ItemStack;
 public interface IChipRAM extends IChip {
 
     IModuleRAM createModule(ItemStack item, IComputer computer);
+
+
 }

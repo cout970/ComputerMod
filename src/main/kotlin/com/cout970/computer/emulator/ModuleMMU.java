@@ -24,7 +24,7 @@ public class ModuleMMU implements IModuleMMU {
     private IComputer computer;
     private IModuleCPU cpu;
     private IModuleRAM ram;
-    private boolean activeTranslation;
+    private boolean activeTranslation = false;
     private IPeripheral cache;
 
     public ModuleMMU() {
