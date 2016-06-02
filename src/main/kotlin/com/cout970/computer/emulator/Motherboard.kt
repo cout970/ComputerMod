@@ -5,6 +5,7 @@ import com.cout970.computer.api.IModuleRAM
 import com.cout970.computer.api.IModuleROM
 import com.cout970.computer.api.IPeripheralDiskDrive
 import com.cout970.computer.tileentity.TileOldComputer
+import net.minecraft.item.ItemStack
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraftforge.items.ItemStackHandler
 
@@ -58,14 +59,17 @@ class Motherboard(
         isAssembled = true
     }
 
+    override  fun getStackLimit(slot: Int, stack: ItemStack): Int = 1
+
     override fun deserializeNBT(nbt: NBTTagCompound?) {
+        super.deserializeNBT(nbt)
         assembly()
         ram?.load(nbt)
         cpu?.load(nbt)
         diskDrive?.load(nbt)
         hddDrive0?.load(nbt)
         hddDrive1?.load(nbt)
-        super.deserializeNBT(nbt)
+
         for (i in 0..slots - 1)
             onContentsChanged(i);
     }

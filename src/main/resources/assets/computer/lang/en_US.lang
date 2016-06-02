@@ -1,5 +1,16 @@
+
+#items
 item.computer.floppy_disk_tier_1.name=Floppy Disk
 item.computer.mips_cpu.name=MIPS CPU
+item.computer.hard_drive.name=Hard Drive
+item.computer.64k_ram.name=64K RAM
+item.computer.rom=ROM
+item.computer.transistor=Transistor
+item.computer.motherboard=Motherboard
 
-itemGroup.computer=Computer
+#blocks
 tile.computer.old_computer.name=Old Computer
+
+#creativeTab
+itemGroup.computer=Computer
+

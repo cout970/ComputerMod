@@ -51,6 +51,7 @@ object Computer {
         registerBlocks()
         registerItems()
         registerTileEntities()
+        registerCraftingRecipes();
         proxy.preInit()
 
         log.info("Pre-init done")

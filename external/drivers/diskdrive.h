@@ -8,7 +8,8 @@
 #include "../lib/util.h"
 
 //default bus address
-#define DEFAULT_DISKDRIVE_ADDR 2
+#define DEFAULT_FLOPPY_DRIVE_ADDR 2
+#define DEFAULT_HARD_DRIVE_ADDR 3
 
 //valid acctions
 #define DISKDRIVE_ACTION_NONE -1
@@ -19,10 +20,14 @@
 #define DISKDRIVE_ACTION_READ_BLOCK 4
 #define DISKDRIVE_ACTION_WRITE_BLOCK 5
 
-#define DISKDRIVE_ID 2
+//valid IDs
+#define FLOPPY_DRIVE_ID 2
+#define HARD_DRIVE_ID 3
 
+//value of "byte finished" to know if the current action has finished
 #define DISKDRIVE_FINISHED 0
 
+//values of "byte disk"
 #define DISKDRIVE_NO_DISK 0
 #define DISKDRIVE_VALID_DISK 1
 

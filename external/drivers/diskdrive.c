@@ -11,7 +11,7 @@
 // DiskDrive the function will return NULL
 Diskdrive* getDiskDrive(int addr){
     Diskdrive* ptr = (Diskdrive *) getPeripheral(addr);
-    if(!ptr->active || ptr->id != DISKDRIVE_ID) return NULL;
+    if(!ptr->active || (ptr->id != FLOPPY_DRIVE_ID && ptr->id != HARD_DRIVE_ID)) return NULL;
     return ptr;
 }
 
