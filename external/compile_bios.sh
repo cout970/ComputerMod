@@ -1,6 +1,6 @@
 #!/bin/bash
 
-drivers="monitor.h monitor.c peripheral.h peripheral.c diskdrive.h diskdrive.c"
+drivers="monitor.h monitor.c peripheral.h peripheral.c floppydrive.h floppydrive.c harddrive.h harddrive.c"
 lib="system.h system.c stdio.h stdio.c util.h util.c"
 input="bios/main.c"
 linker_script="bios/linker.ld"

@@ -13,6 +13,7 @@ import net.minecraft.util.ITickable
 import net.minecraft.util.math.BlockPos
 import net.minecraftforge.common.capabilities.Capability
 import net.minecraftforge.fml.relauncher.Side
+import net.minecraftforge.items.CapabilityItemHandler
 
 /**
  * Created by cout970 on 20/05/2016.
@@ -27,6 +28,11 @@ class TileOldComputer : TileBase(), IComputer, IServerButtonListener, IPeriphera
         }
     }
 
+    //sync vars
+    var assembed = false
+    var running = false
+    var waiting = false
+
     override fun update() {
         if (!world.isRemote) {
             if (motherboard.isAssembled) {
@@ -38,16 +44,10 @@ class TileOldComputer : TileBase(), IComputer, IServerButtonListener, IPeriphera
         }
     }
 
-    override fun getCPU(): IModuleCPU? {
-        return motherboard.cpu
-    }
-
-    override fun getMemory(): IModuleRAM? {
-        return motherboard.ram
-    }
+    override fun getMotherboard(): IMotherboard? = motherboard
 
     override fun getModules(): Array<IModule?> {
-        return arrayOf(motherboard.diskDrive)
+        return arrayOf(motherboard.diskDrive, motherboard.hddDrive0, motherboard.hddDrive1)
     }
 
     override fun getPeripherals(): MutableList<IPeripheral?> = mutableListOf(monitor)
@@ -60,12 +60,13 @@ class TileOldComputer : TileBase(), IComputer, IServerButtonListener, IPeriphera
         } else {
             if (motherboard.isAssembled) {
                 if (mouseButton == 0) {
-                    cpu!!.start()
-                } else if (mouseButton == 1) {
-                    cpu!!.reset()
+                    motherboard.cpu!!.reset()
                     motherboard.rom!!.loadBios(motherboard.ram)
+                    motherboard.cpu!!.start()
+                } else if (mouseButton == 1) {
+                    motherboard.cpu!!.start()
                 } else if (mouseButton == 2) {
-                    cpu!!.stop()
+                    motherboard.cpu!!.stop()
                 }
             }
         }
@@ -122,7 +123,7 @@ class TileOldComputer : TileBase(), IComputer, IServerButtonListener, IPeriphera
     }
 
     override fun hasCapability(capability: Capability<*>?, facing: EnumFacing?): Boolean {
-        if(capability == IComputer.IDENTIFIER || capability == IPeripheralProvider.IDENTIFIER)
+        if(capability == IComputer.IDENTIFIER || capability == IPeripheralProvider.IDENTIFIER || capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY)
             return true
         return super.hasCapability(capability, facing)
     }
@@ -130,6 +131,8 @@ class TileOldComputer : TileBase(), IComputer, IServerButtonListener, IPeriphera
     override fun <T> getCapability(capability: Capability<T>?, facing: EnumFacing?): T? {
         if(capability == IComputer.IDENTIFIER || capability == IPeripheralProvider.IDENTIFIER)
             return this as T
+        if(capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY)
+            return motherboard as T
         return super.getCapability(capability, facing)
     }
 }

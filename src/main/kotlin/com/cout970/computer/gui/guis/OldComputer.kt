@@ -2,6 +2,8 @@ package com.cout970.computer.gui.guis
 
 import com.cout970.computer.gui.ContainerBase
 import com.cout970.computer.gui.GuiBase
+import com.cout970.computer.gui.IComponent
+import com.cout970.computer.gui.IGui
 import com.cout970.computer.gui.components.AbstractButton
 import com.cout970.computer.gui.components.IButtonListener
 import com.cout970.computer.gui.components.MonitorComponent
@@ -11,8 +13,10 @@ import com.cout970.computer.util.resource
 import com.cout970.computer.util.vector.Vec2d
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.entity.player.InventoryPlayer
+import net.minecraft.inventory.IContainerListener
 import net.minecraft.util.ResourceLocation
 import net.minecraftforge.items.SlotItemHandler
+import java.util.function.Predicate
 
 /**
  * Created by cout970 on 20/05/2016.
@@ -47,11 +51,15 @@ class ContainerOldComputer(val tile: TileOldComputer, val player: EntityPlayer) 
 //BACK
 class GuiOldComputerBack(val tile: TileOldComputer, inv: InventoryPlayer) : GuiBase(ContainerOldComputerBack(tile, inv)), IButtonListener {
 
-    override fun initComponents(){
+    override fun initComponents() {
         val start = getStart()
-        components.add(SimpleButton(0, start + Vec2d(-5 + 16, 55), this, Vec2d(0,0)))
-        components.add(SimpleButton(1, start + Vec2d(-3 + 16*2, 55), this, Vec2d(16,0)))
-        components.add(SimpleButton(2, start + Vec2d(-1 + 16*3, 55), this, Vec2d(16*2,0)))
+        components.add(ComponentComputerLight(Vec2d(72, 13), Predicate { tile.assembed }))
+        components.add(ComponentComputerLight(Vec2d(87, 13), Predicate { tile.running }))
+        components.add(ComponentComputerLight(Vec2d(102, 13), Predicate { tile.waiting }))
+        components.add(SimpleButton(0, start + Vec2d(-5 + 16, 55), this, Vec2d(0, 0)))
+        components.add(SimpleButton(1, start + Vec2d(-3 + 16 * 2, 55), this, Vec2d(16, 0)))
+        components.add(SimpleButton(2, start + Vec2d(-1 + 16 * 3, 55), this, Vec2d(16 * 2, 0)))
+
     }
 
     override fun onPress(button: AbstractButton, mouse: Vec2d, mouseButton: Int): Boolean {
@@ -66,13 +74,40 @@ class ContainerOldComputerBack(val tile: TileOldComputer, val inv: InventoryPlay
 
     init {
         addSlotToContainer(SlotItemHandler(tile.motherboard, 0, 11, 9))
-        addSlotToContainer(SlotItemHandler(tile.motherboard, 1, 11+18, 9))
-        addSlotToContainer(SlotItemHandler(tile.motherboard, 2, 11+18*2, 9))
+        addSlotToContainer(SlotItemHandler(tile.motherboard, 1, 11 + 18, 9))
+        addSlotToContainer(SlotItemHandler(tile.motherboard, 2, 11 + 18 * 2, 9))
 
-        addSlotToContainer(SlotItemHandler(tile.motherboard, 3, 11, 9+18))
-        addSlotToContainer(SlotItemHandler(tile.motherboard, 4, 11+18, 9+18))
-        addSlotToContainer(SlotItemHandler(tile.motherboard, 5, 11+18*2, 9+18))
+        addSlotToContainer(SlotItemHandler(tile.motherboard, 3, 11, 9 + 18))
+        addSlotToContainer(SlotItemHandler(tile.motherboard, 4, 11 + 18, 9 + 18))
+        addSlotToContainer(SlotItemHandler(tile.motherboard, 5, 11 + 18 * 2, 9 + 18))
         bindPlayerInventory(inv)
+    }
+
+    override fun detectAndSendChanges() {
+        super.detectAndSendChanges()
+        for (j in this.listeners.indices) {
+            (this.listeners[j] as IContainerListener).sendProgressBarUpdate(this, 0, if (tile.motherboard.isAssembled) 1 else 0)
+            (this.listeners[j] as IContainerListener).sendProgressBarUpdate(this, 1, if (tile.motherboard.cpu?.isRunning ?: false) 1 else 0)
+            (this.listeners[j] as IContainerListener).sendProgressBarUpdate(this, 2, if (tile.motherboard.diskDrive?.isWaiting ?: false) 1 else 0)
+        }
+    }
+
+    override fun updateProgressBar(id: Int, data: Int) {
+        when(id) {
+            0 -> tile.assembed = data == 1
+            1 -> tile.running = data == 1
+            2 -> tile.waiting = data == 1
+        }
     }
 }
 
+class ComponentComputerLight(val pos: Vec2d, val func: Predicate<Void?>) : IComponent {
+
+    override fun drawFirstLayer(gui: IGui, mouse: Vec2d, partialTicks: Float) {
+        gui.bindTexture(resource("textures/gui/cpu.png"))
+        if (func.test(null)) {
+            gui.drawTexturedModalRect(gui.getStart() + pos, Vec2d(9, 9), Vec2d(0, 177))
+        }
+    }
+
+}

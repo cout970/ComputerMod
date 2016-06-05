@@ -7,7 +7,7 @@ import net.minecraft.world.World;
 /**
  * @author cout970
  */
-public interface IPeripheral extends IModule{
+public interface IPeripheral extends IModule {
 
 	/**
 	 * @return The bus ID of this peripheral

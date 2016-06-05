@@ -30,9 +30,11 @@ typedef signed short int int16_t;
 
 typedef uint8_t byte;
 
-int min(int a, int b);
+#define abs(t) t > 0 ? t : -t
 
-int max(int a, int b);
+#define min(a, b) a > b ? b : a
+
+#define max(a, b) a < b ? b : a
 
 // Copies the C string pointed by source into the array pointed by destination,
 // including the terminating null character (and stopping at that point).

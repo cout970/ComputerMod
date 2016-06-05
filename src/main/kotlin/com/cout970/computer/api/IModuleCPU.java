@@ -63,16 +63,6 @@ public interface IModuleCPU extends IModule {
 
 	void setMMU(IModuleMMU mmu);
 
-	/**
-	 * generates an interruption in the cpu
-	 * @param code the interruption code
-	 * 6: invalid jump point
-	 * 5: not aligned with word boundary,
-	 * 4: tlb miss
-	 * 3: syscall/trap
-	 * 2: arithmetic exception
-	 * 1: invalid instruction
-	 * 0: external (hardware failure)
-	 */
-	void throwException(int code);
+
+	void throwException(IExceptionCPU exception);
 }

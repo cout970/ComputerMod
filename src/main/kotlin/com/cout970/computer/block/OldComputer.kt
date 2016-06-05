@@ -11,13 +11,14 @@ import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.EnumFacing
 import net.minecraft.util.EnumHand
 import net.minecraft.util.math.BlockPos
+import net.minecraft.world.IBlockAccess
 import net.minecraft.world.World
 
 /**
  * Created by cout970 on 19/05/2016.
  */
 
-object OldComputer : BlockBase("old_computer", Material.CIRCUITS), ITileEntityProvider {
+object OldComputer : BlockBase("old_computer", Material.IRON), ITileEntityProvider {
 
     override fun createNewTileEntity(worldIn: World?, meta: Int): TileEntity? = TileOldComputer()
 
@@ -27,4 +28,17 @@ object OldComputer : BlockBase("old_computer", Material.CIRCUITS), ITileEntityPr
         }
         return true;
     }
+
+    override fun getStrongPower(blockState: IBlockState, blockAccess: IBlockAccess, pos: BlockPos, side: EnumFacing): Int {
+        return blockState.getWeakPower(blockAccess, pos, side)
+    }
+
+    override fun getWeakPower(blockState: IBlockState, blockAccess: IBlockAccess, pos: BlockPos, side: EnumFacing): Int {
+        return if(side == EnumFacing.NORTH) 15 else 0
+    }
+
+    override fun canProvidePower(state: IBlockState): Boolean {
+        return true
+    }
+
 }

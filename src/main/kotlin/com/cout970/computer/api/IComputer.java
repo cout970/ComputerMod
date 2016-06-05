@@ -14,14 +14,9 @@ public interface IComputer {
 	Capability<IComputer> IDENTIFIER = null;
 
 	/**
-	 * The CPU of the computer
-	 */
-	IModuleCPU getCPU();
-
-	/**
-	 * The main memory of the computer
-	 */
-	IModuleRAM getMemory();
+	 * The motherboard with the CPU, RAM and ROM
+     */
+	IMotherboard getMotherboard();
 
 	/**
 	 * The peripherals inside this computer

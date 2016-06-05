@@ -4,9 +4,9 @@ item.computer.floppy_disk_tier_1.name=Floppy Disk
 item.computer.mips_cpu.name=MIPS CPU
 item.computer.hard_drive.name=Hard Drive
 item.computer.64k_ram.name=64K RAM
-item.computer.rom=ROM
-item.computer.transistor=Transistor
-item.computer.motherboard=Motherboard
+item.computer.rom.name=ROM
+item.computer.transistor.name=Transistor
+item.computer.motherboard.name=Motherboard
 
 #blocks
 tile.computer.old_computer.name=Old Computer

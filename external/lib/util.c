@@ -4,14 +4,6 @@
 
 #include "util.h"
 
-int min(int a, int b) {
-    return a > b ? b : a;
-}
-
-int max(int a, int b) {
-    return a > b ? a : b;
-}
-
 // Copies the C string pointed by source into the array pointed by destination,
 // including the terminating null character (and stopping at that point).
 // destination is returned.
@@ -41,4 +33,5 @@ void *memset(void *ptr, byte value, int num){
     for (i = 0; i < num; ++i) {
         ((byte*)ptr)[i] = value;
     }
+    return ptr;
 }

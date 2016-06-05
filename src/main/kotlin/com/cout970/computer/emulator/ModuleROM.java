@@ -17,7 +17,7 @@ public class ModuleROM implements IModuleROM {
         InputStream archive;
         try {
             archive = ComputerUtilsKt.getInputStream("bios.bin");
-            byte[] buffer = new byte[0x1000];
+            byte[] buffer = new byte[0x1C00];
             int readed = archive.read(buffer, 0, buffer.length);
             for (int i = 0; i < readed; i++) {
                 ram.writeByte(0x0400 + i, buffer[i]);

@@ -1,32 +1,35 @@
 //
 // Created by cout970 on 21/05/2016.
 //
+#include "../drivers/floppydrive.h"
+#include "../drivers/harddrive.h"
 #include "../drivers/monitor.h"
-#include "../drivers/diskdrive.h"
 #include "../lib/stdio.h"
+#include "../lib/system.h"
 
 #define BLOCK_SIZE 0x1000
 
-void search(Diskdrive **disk, Diskdrive **harddrive);
-void load(Diskdrive *disk, byte *mem);
-void printContent(byte *mem);
+void search(FloppyDrive **disk, HardDrive **harddrive);
+void loadFloppyDisk(FloppyDrive *disk, byte *mem);
+void loadHardDrive(HardDrive *disk, byte *mem);
+void printContent(Monitor *mon, byte *mem);
 void boot();
 
 //sets the stack pointer and jumps to main
 asm (
 		"   la $sp, 0x6000\n"
 		"   j main\n"
+		"	nop\n"
 );
 
 void main() {
 
 	//variables
 	Monitor *mon; 					//primary monitor
-	Diskdrive *disk = NULL; 		//floppy disk drive
-	//TODO make a custom driver for the hard drive
-	Diskdrive *harddrive = NULL;	//hard drive
+	FloppyDrive *disk = NULL; 		//floppy disk drive
+	HardDrive *harddrive = NULL;	//hard drive
 	//aux variable
-	int c;
+	int c, searchD = 1;
 	//pointer to the address where to dump the disk content
 	byte *mem = (byte *) 0x2000;
 
@@ -40,35 +43,51 @@ void main() {
 
 	//reset the cursor
 	setCursorMark(mon, 0);
+	setCursor(mon, 0);
 
-	//there is some bug in printf and the first char in the screen is not printed
-	putchar(32);
-	printf("\n");
 	//prints data for the user, to know if the bios works or not
-	printf("Booting...\n");
+	printf(" -> Booting...\n");
 
 	printf("Searching devices...\n");
 
 	search(&disk, &harddrive);
 
-	//printing avalible options
-	printf("\nOptions:\n");
-	if (disk != NULL) {
-		printf(" A: Boot Disk\n");
-		printf(" B: Dump disk content\n");
-	}
-
+	//load from hard drive
 	if (harddrive != NULL) {
-		printf(" C: Boot Hard drive\n");
-		printf(" D: Dump disk content\n");
+		loadHardDrive(harddrive, mem);
+		boot();
 	}
-
-	printf(" E: Refresh disks\n");
-	printf(" F: Clear\n");
-	printf(" G: Shutdown\n");
-	printf("\n");
 
 	while (1) {
+
+		//clears the screen
+		memset(mon->buffer, 32, mon->size);
+		//reset the cursor
+		setCursorMark(mon, 0);
+		setCursor(mon, 0);
+
+		if (searchD) {
+			searchD = 0;
+			printf("Searching devices...\n");
+			search(&disk, &harddrive);
+		}
+
+		//printing avalible options
+		printf("\nOptions:\n");
+		if (disk != NULL) {
+			printf(" A: Boot using Floppy disk\n");
+			printf(" B: Dump Floppy disk content\n");
+		}
+
+		if (harddrive != NULL) {
+			printf(" C: Boot using Hard drive\n");
+			printf(" D: Dump Hard drive content\n");
+		}
+
+		printf(" E: Refresh disks\n");
+		printf(" F: Shutdown\n");
+		printf("\n");
+
 		printf("Option: ");
 		//reseting the key buffer
 		mon->keyBufferSize = 0;
@@ -83,7 +102,7 @@ void main() {
 			if (disk == NULL) {
 				printf("Invalid option\n");
 			} else {
-				load(disk, mem);
+				loadFloppyDisk(disk, mem);
 				boot();
 			}
 			break;
@@ -93,8 +112,12 @@ void main() {
 				printf("Invalid option\n");
 				continue;
 			} else {
-				load(disk, mem);
-				printContent(mem);
+				loadFloppyDisk(disk, mem);
+				printContent(mon, mem);
+				//reseting the key buffer
+				mon->keyBufferSize = 0;
+				//waits until the user press a key
+				getKey(mon);
 			}
 			break;
 		case 'c':
@@ -103,7 +126,7 @@ void main() {
 				printf("Invalid option\n");
 				continue;
 			} else {
-				load(harddrive, mem);
+				loadHardDrive(harddrive, mem);
 				boot();
 			}
 			break;
@@ -113,30 +136,23 @@ void main() {
 				printf("Invalid option\n");
 				continue;
 			} else {
-				load(harddrive, mem);
-				printContent(mem);
+				loadHardDrive(harddrive, mem);
+				printContent(mon, mem);
+				//reseting the key buffer
+				mon->keyBufferSize = 0;
+				//waits until the user press a key
+				getKey(mon);
 			}
 			break;
 		case 'e':
 		case 'E':
-			printf("Searching devices...\n");
-			search(&disk, &harddrive);
+			searchD = 1;
 			break;
 		case 'f':
 		case 'F':
-			//clears the screen
-			memset(mon->buffer, 32, mon->size);
+			printf("Shutdown...\n");
+			exit(0);
 
-			//reset the cursor
-			setCursorMark(mon, 0);
-			break;
-		case 'g':
-		case 'G':
-			printf("Shutdown...");
-			asm volatile (
-					"	la $v0, 10\n"
-					"	syscall\n"
-			);
 			break;
 		default:
 			printf("Invalid option\n");
@@ -144,13 +160,24 @@ void main() {
 	}
 }
 
-void search(Diskdrive **disk, Diskdrive **harddrive) {
-	//searching for a floppy disk
-	*disk = getDiskDrive(DEFAULT_FLOPPY_DRIVE_ADDR);
+void search(FloppyDrive **disk, HardDrive **harddrive) {
 
-	if ((*disk)->active && (*disk)->id == FLOPPY_DRIVE_ID) {
+	//searching for a hard drive
+	*harddrive = getHardDrive(DEFAULT_HARD_DRIVE_ADDR);
+
+	if (*harddrive != NULL) {
+		printf("Found: Hard drive\n");
+	} else {
+		printf("Hard drive not found\n");
+		*harddrive = NULL;
+	}
+
+	//searching for a floppy disk
+	*disk = getFloppyDrive(DEFAULT_FLOPPY_DRIVE_ADDR);
+
+	if (*disk != NULL) {
 		printf("Found: Floppy disk drive\n");
-		if (hasDisk(*disk)) {
+		if (FloppyDrive_hasDisk(*disk)) {
 			printf("Founded Floppy disk in the drive\n");
 		} else {
 			printf("The drive is empty\n");
@@ -160,29 +187,29 @@ void search(Diskdrive **disk, Diskdrive **harddrive) {
 		printf("Floppy disk drive not found\n");
 		*disk = NULL;
 	}
-
-	//searching for a hard drive
-	*harddrive = getDiskDrive(DEFAULT_HARD_DRIVE_ADDR);
-
-	if ((*harddrive)->active && (*harddrive)->id == HARD_DRIVE_ID) {
-		printf("Found: Hard drive\n");
-	} else {
-		printf("Hard drive not found\n");
-		*harddrive = NULL;
-	}
 }
 
-void load(Diskdrive *disk, byte *mem) {
+void loadFloppyDisk(FloppyDrive *disk, byte *mem) {
 	printf("Loading disk...\n");
 
-	seekBlock(disk, 0);
-	readBlock(disk);
-	copyFromBuffer(disk, mem, BLOCK_SIZE, 0, 0);
+	FloppyDrive_seekBlock(disk, 0);
+	FloppyDrive_readBlock(disk);
+	FloppyDrive_copyFromBuffer(disk, mem, BLOCK_SIZE, 0, 0);
 
 	printf("Disk loaded\n");
 }
 
-void printContent(byte *mem) {
+void loadHardDrive(HardDrive *disk, byte *mem) {
+	printf("Loading hard drive...\n");
+
+	HardDrive_seekBlock(disk, 0);
+	HardDrive_readBlock(disk);
+	HardDrive_copyFromBuffer(disk, mem, BLOCK_SIZE, 0, 0);
+
+	printf("Hard drive loaded\n");
+}
+
+void printContent(Monitor *mon, byte *mem) {
 	//aux values
 	int i, j, next = 0, current;
 	//hexadecimal characters
@@ -192,7 +219,7 @@ void printContent(byte *mem) {
 
 	memset(buffer, 32, 80);
 
-	for (j = 0; j < 20; j++) {
+	for (j = 0; j < 32; j++) {
 		for (i = 0; i < 32; i += 3) {
 			current = mem[next++];
 			buffer[4 + i] = *(hex + (current & 0xF));
@@ -204,7 +231,9 @@ void printContent(byte *mem) {
 			}
 			buffer[40 + i] = current;
 		}
-		printf(buffer);
+		for (i = 0; i < 80; i++) {
+			mon->buffer[i + (j + 10) * 80] = buffer[i];
+		}
 	}
 }
 
