@@ -8,7 +8,20 @@
 #include "../lib/system.h"
 
 
-void main() {
+void main(){
+
+	clearScreen(getMonitor(DEFAULT_MONITOR_ADDR));
+	char buffer[80];
+
+	while(1){
+		printf("[root]# ");
+		scanf(" %s", buffer);
+
+	}
+}
+
+
+void m() {
 
 	Monitor *mon = getMonitor(DEFAULT_MONITOR_ADDR);
 	HardDrive *harddrive = NULL;

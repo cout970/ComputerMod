@@ -1,0 +1,23 @@
+{
+    "forge_marker": 1,
+    "variants": {
+        "facing=north": {
+            "model": "mipstek:old_computer"
+        },
+		"facing=south": {
+            "model": "mipstek:old_computer", "y": 180
+        },
+		"facing=west": {
+            "model": "mipstek:old_computer", "y": 270
+        },
+		"facing=east": {
+            "model": "mipstek:old_computer", "y": 90
+        },
+		"normal": {
+            "model": "mipstek:old_computer"
+        },
+        "inventory": {
+            "model": "mipstek:old_computer"
+        }
+    }
+}

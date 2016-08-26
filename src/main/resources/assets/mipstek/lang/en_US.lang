@@ -1,0 +1,16 @@
+
+#items
+item.mipstek.floppy_disk_tier_1.name=Floppy Disk
+item.mipstek.mips_cpu.name=MIPS CPU
+item.mipstek.hard_drive.name=Hard Drive
+item.mipstek.64k_ram.name=64K RAM
+item.mipstek.rom.name=ROM
+item.mipstek.transistor.name=Transistor
+item.mipstek.motherboard.name=Motherboard
+
+#blocks
+tile.mipstek.old_computer.name=Old Computer
+
+#creativeTab
+itemGroup.mipstek=Computer
+

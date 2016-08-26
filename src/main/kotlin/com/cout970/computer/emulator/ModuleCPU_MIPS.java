@@ -40,7 +40,8 @@ public class ModuleCPU_MIPS implements IModuleCPU {
     //counts the number of instructions to run this tick
     protected int cpuCycles = -1;
 
-    public ModuleCPU_MIPS() {}
+    public ModuleCPU_MIPS() {
+    }
 
     @Override
     public boolean isRunning() {
@@ -115,9 +116,9 @@ public class ModuleCPU_MIPS implements IModuleCPU {
         if (s == 0) {
             return;
         }
-        if (debug) {
-            log("Reg: %s, change from 0x%08x (%d) to 0x%08x (%d)", registerNames[s], registers[s], registers[s], val, val);
-        }
+//        if (debug) {
+//            log("Reg: %s, change from 0x%08x (%d) to 0x%08x (%d)", registerNames[s], registers[s], registers[s], val, val);
+//        }
         registers[s] = val;
     }
 
@@ -565,15 +566,15 @@ public class ModuleCPU_MIPS implements IModuleCPU {
     public void throwException(IExceptionCPU exception) {
 
 //        if (debug) {
-            log("Exception: %d (%s), regPC: 0x%08x, pfPC: 0x%08x, Description: %s", exception.getCode(), exception.getName(), regPC, pfPC, exception.getDescription());
-            int inst = mmu.readInstruction(pfPC);
-            debugInst(inst);
+        log("Exception: %d (%s), regPC: 0x%08x, pfPC: 0x%08x, Description: %s", exception.getCode(), exception.getName(), regPC, pfPC, exception.getDescription());
+        int inst = mmu.readInstruction(pfPC);
+        debugInst(inst);
 
-            debug("Registers: ");
-            for (int i = 0; i < 32; i++) {
-                log("\t %d: \t %s : 0x%08x (%08d)", i, registerNames[i], getRegister(i), getRegister(i));
-            }
-            stop();
+        debug("Registers: ");
+        for (int i = 0; i < 32; i++) {
+            log("\t %d: \t %s : 0x%08x (%08d)", i, registerNames[i], getRegister(i), getRegister(i));
+        }
+        stop();
 //        } else {
 //            int flag = exception.getCode();
 //            if ((regStatus & (flag + 1)) == 0) {

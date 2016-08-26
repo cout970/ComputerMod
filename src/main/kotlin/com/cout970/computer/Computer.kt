@@ -44,6 +44,7 @@ object Computer {
         modsFile = event.sourceFile.parent
         configFile = event.suggestedConfigurationFile
         log.info("Starting pre-init")
+
 //        ConfigHandler.load()
 //        ConfigHandler.read()
 //        ConfigHandler.save()

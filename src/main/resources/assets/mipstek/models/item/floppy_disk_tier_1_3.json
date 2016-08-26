@@ -1,6 +1,6 @@
 {
     "parent": "item/generated",
     "textures": {
-        "layer0": "computer:items/floppy_disk_6"
+        "layer0": "mipstek:items/floppy_disk_3"
     }
 }

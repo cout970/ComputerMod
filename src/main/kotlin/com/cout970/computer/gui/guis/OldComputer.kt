@@ -13,7 +13,9 @@ import com.cout970.computer.util.resource
 import com.cout970.computer.util.vector.Vec2d
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.entity.player.InventoryPlayer
+import net.minecraft.inventory.ClickType
 import net.minecraft.inventory.IContainerListener
+import net.minecraft.item.ItemStack
 import net.minecraft.util.ResourceLocation
 import net.minecraftforge.items.SlotItemHandler
 import java.util.function.Predicate
@@ -45,6 +47,10 @@ class ContainerOldComputer(val tile: TileOldComputer, val player: EntityPlayer) 
 
     override fun detectAndSendChanges() {
         tile.sendMonitorDataToClient(player)
+    }
+
+    override fun slotClick(slotId: Int, dragType: Int, clickTypeIn: ClickType?, player: EntityPlayer?): ItemStack? {
+        return null
     }
 }
 
@@ -93,11 +99,15 @@ class ContainerOldComputerBack(val tile: TileOldComputer, val inv: InventoryPlay
     }
 
     override fun updateProgressBar(id: Int, data: Int) {
-        when(id) {
+        when (id) {
             0 -> tile.assembed = data == 1
             1 -> tile.running = data == 1
             2 -> tile.waiting = data == 1
         }
+    }
+
+    override fun slotClick(slotId: Int, dragType: Int, clickTypeIn: ClickType?, player: EntityPlayer?): ItemStack? {
+        return super.slotClick(slotId, dragType, clickTypeIn, player)
     }
 }
 
@@ -109,5 +119,4 @@ class ComponentComputerLight(val pos: Vec2d, val func: Predicate<Void?>) : IComp
             gui.drawTexturedModalRect(gui.getStart() + pos, Vec2d(9, 9), Vec2d(0, 177))
         }
     }
-
 }

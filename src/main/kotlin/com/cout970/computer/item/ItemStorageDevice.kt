@@ -17,7 +17,7 @@ import java.io.File
  */
 abstract class ItemStorageDevice(name: String) : ItemBase(name), IStorageDevice, ICapabilityProvider {
 
-    abstract fun getDiskSize(): Int;
+    abstract fun getDiskSize(): Int
 
     override fun getAssociateFile(i: ItemStack): File {
         sanityCheck(i)

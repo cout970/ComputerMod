@@ -9,6 +9,7 @@ import net.minecraft.world.World;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Arrays;
 
 /**
  * Created by cout970 on 08/02/2016.
@@ -125,9 +126,7 @@ public abstract class PeripheralStorageDrive implements IPeripheralStorageDrive 
             acces.seek(getSector() * getSectorSize());
             int read = acces.read(getRawBuffer());
             if (read == -1) {
-                for (int i = 0; i < getSectorSize(); i++) {
-                    getRawBuffer()[i] = 0;
-                }
+                Arrays.fill(getRawBuffer(), (byte)0);
             } else if (read < getSectorSize()) {
                 for (int i = read; i < getSectorSize(); i++) {
                     getRawBuffer()[i] = 0;

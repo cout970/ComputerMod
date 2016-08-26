@@ -1,0 +1,8 @@
+{
+    "parent": "block/orientable",
+    "textures": {
+        "top": "mipstek:blocks/old_computer_top",
+        "front": "mipstek:blocks/old_computer_face_off",
+        "side": "mipstek:blocks/old_computer_side"
+    }
+}

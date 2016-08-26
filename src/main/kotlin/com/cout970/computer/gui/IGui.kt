@@ -13,7 +13,6 @@ const val MOUSE_BUTTON_LEFT = 0
 const val MOUSE_BUTTON_MIDDLE = 1
 const val MOUSE_BUTTON_RIGHT = 2
 
-
 interface IGui : IGuiRenderer {
 
     fun getSize(): Vec2d

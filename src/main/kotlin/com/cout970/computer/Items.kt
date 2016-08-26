@@ -3,7 +3,7 @@ import com.cout970.computer.item.*
 import net.minecraft.item.Item
 import net.minecraftforge.fml.common.registry.GameRegistry
 
-val items = listOf<Item>(ItemFloppyDisk, ItemCPUMips, ItemRAM64K, ItemROM, ItemHardDrive, ItemTransistor, ItemMotherboard)
+val items = listOf<Item>(ItemFloppyDisk, ItemCPUMips, ItemRAM64K, ItemROM, ItemHardDrive, ItemTransistor, ItemMotherboard, ItemFloppyDisckOS)
 
 fun registerItems() {
     items.forEach {

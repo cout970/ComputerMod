@@ -1,6 +1,6 @@
 {
     "parent": "item/generated",
     "textures": {
-        "layer0": "computer:items/mips_cpu"
+        "layer0": "mipstek:items/hard_drive"
     }
 }
